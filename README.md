@@ -1,78 +1,136 @@
+# Kubernetes Application Observability with Prometheus
 
-# 📚 7-Day Observability Tutorial Series
+A hands-on observability project that monitors a containerized Node.js application running on Kubernetes using custom Prometheus metrics, ServiceMonitor, and PromQL.
 
-Welcome to the 7-Day Observability Tutorial Series! This repository contains the code and detailed explanations for setting up and understanding observability in Kubernetes using Prometheus, Grafana, Elasticsearch Fluentbit, Kibana, Jaeger, groundcover(eBPF), opentelemetry e.t.c.,.
+## Project Overview
 
-## 📅 Overview of Each Day
+This project implements application-level monitoring for a Node.js application deployed on Kubernetes.
 
-### Day 1: Introduction to Observability
-- **Concepts Covered**:
-  - Introduction to Observability, Monitoring, Logging, and Tracing.
-  - The difference between Monitoring and Observability.
-  - Tools available for Monitoring and Observability.
-  - Comparison between monitoring and observing in Bare-Metal Servers vs. Kubernetes.
-- **Key Learning**:
-  - Understand the fundamental concepts of observability.
-  - Learn why monitoring and observability are crucial in modern IT environments.
+The application exposes custom metrics through a `/metrics` endpoint, which are automatically discovered and scraped by Prometheus using a Kubernetes `ServiceMonitor`.
 
-### Day 2: Prometheus - Setting Up Monitoring
-- **Concepts Covered**:
-  - Introduction to Prometheus and its architecture.
-  - Setup and configuration of Prometheus in an EKS cluster.
-  - Installation of kube-prometheus-stack with Helm and integrating it with Grafana.
-  - Basic queries and setup for monitoring with Prometheus and Grafana.
-- **Key Learning**:
-  - Get hands-on experience with Prometheus and Grafana.
-  - Learn to install and configure Prometheus on Kubernetes.
+The collected metrics can then be queried using PromQL to monitor application traffic and performance.
 
-### Day 3: Metrics and PromQL in Prometheus
-- **Concepts Covered**:
-  - Introduction to PromQL and basic querying techniques.
-  - Aggregation and functions in PromQL to analyze metrics data.
-- **Key Learning**:
-  - Master the Prometheus Query Language (PromQL) for querying and analyzing metrics.
+## Architecture
 
-### Day 4: Instrumentation and Custom Metrics
-- **Concepts Covered**:
-  - Instrumentation for adding monitoring capabilities to applications.
-  - Understanding different types of metrics in Prometheus: Counter, Gauge, Histogram, and Summary.
-  - Writing custom metrics in a Node.js application using the `prom-client` library.
-  - Dockerizing the application and deploying it on Kubernetes.
-  - Setting up Alertmanager for alerting based on custom metrics.
-- **Key Learning**:
-  - Learn how to instrument applications to expose custom metrics.
-  - Configure alerts in Alertmanager to monitor application performance.
-  - Understand how to work with different types of metrics in Prometheus.
+```text
+Node.js Application
+        │
+        │ /metrics
+        ▼
+Kubernetes Service
+        │
+        │ ServiceMonitor
+        ▼
+Prometheus
+        │
+        │ PromQL
+        ▼
+Application Metrics
+```
 
-### Day 5: Logging with EFK Stack
-- **Concepts Covered**:
-  - Introduction to logging in distributed systems and Kubernetes.
-  - Setting up the EFK stack (Elasticsearch, Fluentbit, Kibana) on Kubernetes.
-  - Detailed setup and configuration for collecting and visualizing logs.
-  - Cleaning up the Kubernetes cluster and resources.
-- **Key Learning**:
-  - Understand the importance of logging and how to set up
+## Technologies Used
 
-### Day 6: Distributed Tracing with Jaeger
-- **Concepts Covered**:
-  - Introduction to Jaeger and its architecture for distributed tracing.
-  - Setting up Jaeger in a Kubernetes cluster using Helm.
-  - Instrumenting services using OpenTelemetry to enable tracing.
-  - Viewing and analyzing traces in the Jaeger UI.
-  - Cleaning up the environment after setting up Jaeger.
-- **Key Learning**:
-  - Gain insights into distributed tracing and how it helps in debugging and performance optimization.
-  - Learn how to set up and configure Jaeger for tracing in a microservices architecture.
+* Kubernetes
+* Amazon EKS
+* Docker
+* Node.js
+* Prometheus
+* PromQL
+* ServiceMonitor
+* YAML
 
-### Day 7: OpenTelemetry – Setting Up Unified Observability
-- **Concepts Covered**:
-  - Introduction to OpenTelemetry, a unified framework for observability.
-  - Understanding how OpenTelemetry integrates tracing, metrics, and logging.
-  - Comparison of OpenTelemetry with prior observability tools like Jaeger, Prometheus
-  - Supported programming languages and multi-language support in OpenTelemetry.
-  - Step-by-step setup of OpenTelemetry in Kubernetes.
-- **Key Learning**:
-  - Learn how OpenTelemetry simplifies the process of collecting and exporting telemetry data.
-  - Understand the benefits of a unified observability approach using OpenTelemetry.
-  - Gain hands-on experience with setting up OpenTelemetry Collector, Prometheus, Jaeger, and Elasticsearch to monitor a Golang microservice application.
+## Implementation
 
+### 1. Application Instrumentation
+
+Instrumented the Node.js application with custom Prometheus metrics.
+
+Implemented:
+
+* `http_requests_total` — tracks HTTP requests
+* `http_request_duration_seconds` — tracks request latency using Histogram
+* `http_request_duration_summary_seconds` — tracks request latency using Summary
+* `node_gauge_example` — demonstrates Gauge metrics
+
+The application exposes these metrics through:
+
+```text
+/metrics
+```
+
+### 2. Containerization
+
+Created a Docker image for the Node.js application and deployed the containerized application to Kubernetes.
+
+### 3. Kubernetes Deployment
+
+Created Kubernetes resources for the application:
+
+* Deployment
+* Service
+* Service configuration for exposing the application
+
+Verified the application using Kubernetes:
+
+```bash
+kubectl get pods -n dev
+kubectl get svc -n dev
+```
+
+### 4. Prometheus ServiceMonitor
+
+Configured a `ServiceMonitor` to allow Prometheus to discover and scrape the application's `/metrics` endpoint.
+
+The ServiceMonitor connects:
+
+```text
+Kubernetes Service → /metrics → Prometheus
+```
+
+### 5. Prometheus Monitoring
+
+Verified that Prometheus successfully discovered the application and started collecting custom application metrics.
+
+Example metric:
+
+```promql
+http_requests_total
+```
+
+### 6. PromQL Monitoring
+
+Used PromQL to analyze application traffic.
+
+Example:
+
+```promql
+sum by (path) (rate(http_requests_total[1m]))
+```
+
+This shows the request rate for each application endpoint.
+
+## Result
+
+The application was successfully deployed on Kubernetes and connected to Prometheus for application-level monitoring.
+
+The implementation demonstrates how custom application metrics can be exposed, discovered through Kubernetes, collected by Prometheus, and analyzed using PromQL.
+
+## Key Project Flow
+
+```text
+Application Instrumentation
+        ↓
+Docker Container
+        ↓
+Kubernetes Deployment
+        ↓
+Kubernetes Service
+        ↓
+ServiceMonitor
+        ↓
+Prometheus Scraping
+        ↓
+PromQL Queries
+        ↓
+Application Observability
+```
